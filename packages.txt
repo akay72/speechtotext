@@ -1,2 +1,2 @@
 espeak
-
+python3-pyaudio
