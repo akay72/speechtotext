@@ -86,7 +86,7 @@ def main():
 
                     # Initialize the recognizer and the microphone
                     recognizer = sr.Recognizer()
-                    mic = sr.Microphone(device_index=1)
+                    mic = sr.Microphone(device_index=0)
 
                     # Record the answer
                     with mic as source:
