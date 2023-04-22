@@ -1,2 +1,2 @@
 espeak
-portaudio19-dev
+libportaudio-dev
