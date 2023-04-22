@@ -4,3 +4,4 @@ pyttsx3==2.71
 SpeechRecognition==3.8.1
 python-docx==0.8.11
 streamlit-lottie==0.0.3
+PyAudio
