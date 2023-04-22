@@ -9,11 +9,6 @@ import json
 import base64
 import pyaudio
 
-pa = pyaudio.PyAudio()
-
-for i in range(pa.get_device_count()):
-    device_info = pa.get_device_info_by_index(i)
-    print(f"Devicetest {i}: {device_info['name']}")
 st.set_page_config(page_title="Question/Answer App", layout="wide")
 
 def load_lottie_file(file_path: str):
@@ -92,6 +87,12 @@ def main():
 
                     # Initialize the recognizer and the microphone
                     recognizer = sr.Recognizer()
+                    
+                    pa = pyaudio.PyAudio()
+
+                    for i in range(pa.get_device_count()):
+                        device_info = pa.get_device_info_by_index(i)
+                        print(f"Devicetest {i}: {device_info['name']}")
                     #mic = sr.Microphone()
                     microphone_list = sr.Microphone.list_microphone_names()
                     for i, microphone_name in enumerate(microphone_list):
