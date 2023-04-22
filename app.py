@@ -86,8 +86,11 @@ def main():
 
                     # Initialize the recognizer and the microphone
                     recognizer = sr.Recognizer()
-                    mic = sr.Microphone(device_index=0)
-
+                    microphone_list = sr.Microphone.list_microphone_names()
+                    for i, microphone_name in enumerate(microphone_list):
+                         print(f"Microphone {i}: {microphone_name}")
+                         mic = sr.Microphone(device_index=i)
+                    
                     # Record the answer
                     with mic as source:
                         st.write("#### Please speak the answer now.")
