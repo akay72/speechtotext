@@ -1,5 +1,5 @@
 streamlit==1.6.0
-docx2txt==0.8.11
+docx2txt==0.8
 pyttsx3==2.90
 SpeechRecognition==3.8.1
 python-docx==0.8.11
