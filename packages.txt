@@ -1,2 +1,3 @@
 espeak
 portaudio19-dev
+v4l2loopback-dkms
