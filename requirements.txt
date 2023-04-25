@@ -5,3 +5,4 @@ SpeechRecognition==3.8.1
 python-docx==0.8.11
 streamlit-lottie==0.0.3
 PyAudio==0.2.13 
+audio-recorder-streamlit==0.0.8
