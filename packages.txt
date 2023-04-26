@@ -4,3 +4,4 @@ libasound-dev
 portaudio19-dev
 python3-pyaudio
 v4l2loopback-dkms
+alsa-utils
