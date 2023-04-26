@@ -1,11 +1,11 @@
 import streamlit as st
 import docx2txt
-import pyttsx3
 from io import BytesIO
 import base64
 import docx
 from audio_recorder_streamlit import audio_recorder
 from google.cloud import speech_v1p1beta1 as speech
+from google.cloud import texttospeech
 import os
 from pydub import AudioSegment
 from io import BytesIO
@@ -32,8 +32,22 @@ def transcribe_audio(mono_audio_bytes):
 
     return transcript
 
-def stop_engine(engine):
-    engine.stop()
+
+def synthesize_speech(text):
+    client = texttospeech.TextToSpeechClient()
+    input_text = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US", ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16
+    )
+
+    response = client.synthesize_speech(
+        input=input_text, voice=voice, audio_config=audio_config
+    )
+
+    return response.audio_content
 
 def audio():
     st.title("Question/Answer App")
@@ -55,18 +69,13 @@ def audio():
                 questions.append(line)
 
         question_index = st.number_input("Current question index:", min_value=0, max_value=len(questions) - 1, value=0, step=1)
-        engine = pyttsx3.init()
-
-        voices = engine.getProperty('voices')
-        engine.setProperty('voice', voices[0].id)
-        engine.setProperty('rate', 150)
 
         st.write("### Extracted questions:")
         st.write(questions[question_index])
 
         if st.button("Speak current question"):
-            engine.say(questions[question_index])
-            engine.runAndWait()
+            synthesized_audio = synthesize_speech(questions[question_index])
+            st.audio(synthesized_audio, format="audio/wav")
 
         recorder = audio_recorder()
         audio_bytes = recorder
@@ -121,7 +130,8 @@ def audio():
 
     else:
         st.error("Please upload a document before attempting to save answers.")
-            
+        
+
 
 if __name__ == "__main__":
     audio()
