@@ -7,3 +7,4 @@ streamlit-lottie==0.0.3
 PyAudio==0.2.13 
 audio-recorder-streamlit==0.0.8
 google-cloud-speech==2.19.0 
+pydub==0.25.1 
