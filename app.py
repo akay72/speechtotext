@@ -58,7 +58,7 @@ def audio():
 
     st.write("""
     <style>
-        .e1tzin5v3 {
+        .e1tzin5v0 {
             height: 50px;
         }
     </style>
