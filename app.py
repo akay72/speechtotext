@@ -9,12 +9,13 @@ from google.cloud import texttospeech
 import os
 from pydub import AudioSegment
 import streamlit.components.v1 as components
-import json
-from streamlit_lottie import st_lottie
+
+
+
 
 # Set up Streamlit and Google API
 st.set_page_config(page_title="Question/Answer App", layout="wide")
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'key.json'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'key1.json'
 lottie_file = "lottie.json"
 
 # Transcribe audio using Google Speech-to-Text API
@@ -53,16 +54,67 @@ def synthesize_speech(text):
 
     return response.audio_content
 
+
 # Main application logic
 def audio():
+    button_style = """
+        <style>
+        section[data-testid="stSidebar"]  .stButton > button{
+            display: inline-flex;
+            -moz-box-align: center;
+            align-items: center;
+            -moz-box-pack: center;
+            justify-content: center;
+            font-weight: 400;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            margin: 0px;
+            line-height: 1.6;
+            color: inherit;
+            width: auto;
+            user-select: none;
+            background-color: rgb(249, 249, 251);
+            border: 1px solid rgba(49, 51, 63, 0.2);
+            cursor: pointer;
+            height: 35px;
+         }
+        section[data-testid="stSidebar"]  .stButton > button:hover { 
+            border-color: rgb(255, 75, 75);
+            color: rgb(255, 75, 75);
+            }
 
-    st.write("""
-    <style>
-        .e1tzin5v0 {
-            height: 50px;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+
+
+        .stButton > button {
+            color: white;
+            background: #232121f5;
+            width: 250px;
+            height: 40px;
+            font-size: 50px;
+            }
+
+            [data-testid="stVerticalBlock"] [data-testid="stHorizontalBlock"]:nth-child(1) .stButton {
+            
+                  position: fixed;
+                    bottom: 60px;
+              }   
+
+        .stDownloadButton > button {
+                    position: fixed;
+                    bottom: 10px;
+                    width: 250px;
+                     
+            }
+            # [data-testid="stVerticalBlock"] div.css-budd4c.e1tzin5v0:nth-of-type(1) .stButton {
+            #         position: fixed;
+            #         bottom: 60px;
+                    
+                    
+            } 
+        </style>
+        """
+    st.markdown(button_style, unsafe_allow_html=True)
+
 
     # App title and description
     st.title("Question/Answer App")
@@ -73,7 +125,7 @@ def audio():
         st.session_state.answers = {}
 
     # Sidebar file uploader
-    uploaded_file = st.sidebar.file_uploader("Choose a Word document", type="docx")
+    uploaded_file = st.file_uploader("Choose a Word document", type="docx")
 
     # Process uploaded file
     if uploaded_file is not None:
@@ -88,17 +140,18 @@ def audio():
             if line.endswith("?"):
                 questions.append(line)
 
+        if not questions:
+            st.warning(f":x: Sorry, I did not find any question in the document.")
+        else:         
+
         # Display the current question
-        question_index = st.number_input("Current Question:", min_value=1, max_value=len(questions), value=1, step=1) - 1
-        st.write("### Extracted questions:")
-        st.write(questions[question_index])
-
-        # Columns for audio playback and Lottie animation
-        col1, col2 = st.columns([.2, 1])
-
-        # Ask question button
-        with col1:
-            if st.button("Ask Question"):
+            question_index = st.number_input("Current Question:", min_value=1, max_value=len(questions), value=1, step=1,on_change=None,key="xy") - 1
+            col1, col2 = st.columns([.7,1])
+            col1.write(f"Total Number of Questions: {len(questions)}")
+            
+            
+                
+            if col1.button("Ask Next Question.🎧"):
                 synthesized_audio = synthesize_speech(questions[question_index])
 
                 audio_html = f"""
@@ -110,75 +163,74 @@ def audio():
                 </script>
                 """
 
-                components.html(audio_html, height=10)
+                components.html(audio_html, height=0)
+            
 
-                with open(lottie_file, "r") as f:
-                    lottie_data = json.load(f)
+                
 
-                if lottie_data:
+            # Record audio answer
+            recorder = audio_recorder(pause_threshold=60.0)
+            audio_bytes = recorder
+
+            # Process audio answer
+            if audio_bytes:
+                # Convert recorded audio to mono and the required sample rate
+                stereo_audio = AudioSegment.from_wav(BytesIO(audio_bytes))
+                mono_audio = stereo_audio.set_channels(1).set_frame_rate(48000)
+                mono_audio_bytes = mono_audio.export(format="wav").read()
+
+                # Convert audio to text button
+                if st.button("Convert to text"):
+                    answer = transcribe_audio(mono_audio_bytes)
+                    col2.markdown("<b><span style='color:red; font-size: 20px;' >Answer:</span></b>",
+                    unsafe_allow_html=True)
+                    col2.write(answer)
                     
-                    with col2:
-                        components.html(st_lottie(lottie_data, speed=1, width=50, height=40, key="small_animation"), height=100)
-                # ... (content remains the same)
+                    st.session_state.answers[question_index] = answer
 
-        # Record audio answer
-        recorder = audio_recorder()
-        audio_bytes = recorder
+            # Save answers to the document button
+            with st.container():
+                col1,col2=st.columns([.5,1])
+                if col1.button("Save answers to the document"):
+                    # Create a new Word document with the answers
+                    doc = docx.Document(BytesIO(file_contents))
+                    # ... (content remains the same)
+                    title = doc.add_paragraph("Question and Answer")
+                    title.runs[0].font.size = docx.shared.Pt(24)
+                    title.runs[0].font.bold = True
+                    doc.add_paragraph("")
 
-        # Process audio answer
-        if audio_bytes:
-            # Convert recorded audio to mono and the required sample rate
-            stereo_audio = AudioSegment.from_wav(BytesIO(audio_bytes))
-            mono_audio = stereo_audio.set_channels(1).set_frame_rate(48000)
-            mono_audio_bytes = mono_audio.export(format="wav").read()
+                    for index, answer in st.session_state.answers.items():
+                        question_paragraph = doc.add_paragraph()
+                        question_paragraph.add_run("Question {}: ".format(index + 1)).bold = True
+                        question_paragraph.add_run(questions[index])
+                        answer_paragraph = doc.add_paragraph()
+                        answer_paragraph.add_run("Answer {}: ".format(index + 1)).bold = True
+                        answer_paragraph.add_run(answer)
 
-            # Convert audio to text button
-            if st.button("Convert to text"):
-                answer = transcribe_audio(mono_audio_bytes)
-                st.write("### Answer:")
-                st.write(answer)
-                st.session_state.answers[question_index] = answer
+                    try:
+                        output_filename = "output_" + uploaded_file.name
+                        with BytesIO() as output_file:
+                            doc.save(output_file)
+                            output_file.seek(0)
+                            content = output_file.read()
+                        st.success("Answers saved to the '{}'.".format(output_filename))
 
-        # Save answers to the document button
-        if st.button("Save answers to the document"):
-            # Create a new Word document with the answers
-            doc = docx.Document(BytesIO(file_contents))
-            # ... (content remains the same)
-            title = doc.add_paragraph("Question and Answer")
-            title.runs[0].font.size = docx.shared.Pt(24)
-            title.runs[0].font.bold = True
-            doc.add_paragraph("")
+                        # Add the download button
+                        col1.download_button(
+                            label="Download updated document",
+                            data=content,
+                            file_name=output_filename,
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        )
+                    # Save the new document and display download button
 
-            for index, answer in st.session_state.answers.items():
-                question_paragraph = doc.add_paragraph()
-                question_paragraph.add_run("Question {}: ".format(index + 1)).bold = True
-                question_paragraph.add_run(questions[index])
-                answer_paragraph = doc.add_paragraph()
-                answer_paragraph.add_run("Answer {}: ".format(index + 1)).bold = True
-                answer_paragraph.add_run(answer)
-
-            try:
-                output_filename = "output_" + uploaded_file.name
-                with BytesIO() as output_file:
-                    doc.save(output_file)
-                    output_file.seek(0)
-                    content = output_file.read()
-                st.sidebar.success("Answers saved to the '{}'.".format(output_filename))
-
-                # Add the download button
-                st.sidebar.download_button(
-                    label="Download updated document",
-                    data=content,
-                    file_name=output_filename,
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-            # Save the new document and display download button
-
-            except PermissionError:
-                st.error("Permission denied: Please close the current '{}' file before saving.".format(uploaded_file.name))
+                    except PermissionError:
+                        st.error("Permission denied: Please close the current '{}' file before saving.".format(uploaded_file.name))
 
     else:
         st.error("Please upload a document before attempting to save answers.")
+
 
 if __name__ == "__main__":
     audio()
